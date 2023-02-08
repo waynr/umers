@@ -8,9 +8,10 @@ use crate::errors::{Error, Result};
 
 #[derive(Deserialize, Serialize)]
 pub struct Data {
-    pub education: Vec<Education>,
-    pub experience: Vec<Experience>,
-    pub skills: Vec<Skills>,
+    pub basic: Option<Basic>,
+    pub education: Option<Vec<Education>>,
+    pub experience: Option<Vec<Experience>>,
+    pub skills: Option<Vec<Skills>>,
 }
 
 impl TryFrom<PathBuf> for Data {
@@ -25,6 +26,25 @@ impl TryFrom<PathBuf> for Data {
         let _ = file.read_to_string(&mut contents)?;
         Ok(serde_yaml::from_str(&contents)?)
     }
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct Basic {
+    pub name: Option<String>,
+    pub contact: Option<Contact>,
+    pub websites: Option<Vec<Website>>,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct Contact {
+    pub phone: Option<String>,
+    pub email: Option<String>,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct Website {
+    pub text: String,
+    pub url: String,
 }
 
 #[derive(Deserialize, Serialize)]
