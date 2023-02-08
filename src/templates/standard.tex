@@ -84,19 +84,20 @@
 {{ objective }}
 \bigskip
 {% endif %}
-{% if (skills is defined and
-       skills|length > 0) %}
+{% set numskills = skills | length %}
+{% if skills is defined and numskills > 0 %}
 \sectionheader{Technical Skills Summary}
 
 \noindent\begin{tabu} to \textwidth { @{} X[2,l] X[5,p] }
 
   {% for category in skills %}
-    {% if category.skills[0] is mapping %}
+    {% set skills = category.skills[0] %}
+    {% if skills is object %}
       {% for item in category.skills %}
-{{category.category}} - {{ item.category }} & {{ item.skills|join(', ')}} \\
+{{category.category}} - {{ item.category }} & {{ item.skills|join(sep=", ")}} \\
       {% endfor %}
     {% else %}
-{{category.category}} & {{ category.skills|join(', ') }} \\
+{{category.category}} & {{ category.skills|join(sep=', ') }} \\
     {% endif %}
   {% endfor %}
 
@@ -134,14 +135,12 @@
   {{school.startdate}} - {{school.enddate}}
   }
 \smallskip
-  {% if ("degrees" in school and
-         school.degrees|length > 0) %}
+  {% if "degrees" in school and school.degrees|length > 0 %}
     {% for degree in school.degrees %}
 \noindent\textit{ {{degree}} }\\
     {% endfor %}
   {% endif %}
-  {% if ("achievements" in school and
-         school.achievements|length > 0) %}
+  {% if "achievements" in school and school.achievements|length > 0 %}
     {% for achievement in school.achievements %}
 \indent\textit{ {{achievement}} }
     {% endfor %}
@@ -151,8 +150,7 @@
   {% endif %}
 {% endfor %}
 {% endif %}
-{% if (activities is defined and
-       activities|length > 0) %}
+{% if activities is defined and activities|length > 0 %}
 \sectionheader{Activities}
   {% for activity in activities %}
 \centerline{\large\bf
