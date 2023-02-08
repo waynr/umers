@@ -16,4 +16,7 @@ pub enum Error {
     
     #[error("parsing yaml")]
     SerdeYamlError(#[from] serde_yaml::Error),
+
+    #[error("populating context from serializable")]
+    TeraError(#[from] tera::Error),
 }

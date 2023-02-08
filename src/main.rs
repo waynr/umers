@@ -1,6 +1,11 @@
+use std::include_str;
 use std::path::PathBuf;
 
 use clap;
+use tera::{Context, Tera};
+
+#[macro_use]
+extern crate lazy_static;
 
 mod data;
 use crate::data::Data;
@@ -40,12 +45,24 @@ fn generate_impl(matches: &clap::ArgMatches) -> Result<()> {
         Some(vs) => vs,
         None => return Err(Error::NoDataFiles),
     };
+
     let mut d = Data::new();
     for v in values {
         let path = PathBuf::from(v);
         let tmp = Data::try_from(path.clone())?;
         d = d.merge(&tmp);
     }
+
+    let standard_tmpl = include_str!("templates/standard.tex");
+    let mut tera = Tera::default();
+    tera.add_raw_template("standard.tex", standard_tmpl)?;
+    for template in tera.get_template_names() {
+        println!("{:0}", template);
+    }
+
+    let context = Context::from_serialize(d)?;
+    let output = tera.render("standard.tex", &context)?;
+    println!("{:0}", output);
     Ok(())
 }
 
