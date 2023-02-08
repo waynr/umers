@@ -40,9 +40,11 @@ fn generate_impl(matches: &clap::ArgMatches) -> Result<()> {
         Some(vs) => vs,
         None => return Err(Error::NoDataFiles),
     };
+    let mut d = Data::new();
     for v in values {
         let path = PathBuf::from(v);
-        let d = Data::try_from(path.clone())?;
+        let tmp = Data::try_from(path.clone())?;
+        d = d.merge(&tmp);
     }
     Ok(())
 }

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::errors::{Error, Result};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Data {
     pub basic: Option<Basic>,
     pub education: Option<Vec<Education>>,
@@ -28,26 +28,77 @@ impl TryFrom<PathBuf> for Data {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+impl Data {
+    pub fn new() -> Self {
+        Data {
+            basic: None,
+            education: None,
+            experience: None,
+            skills: None,
+        }
+    }
+
+    /// Merge aspects from the given Config into a copy of the current, return a new Config.
+    pub fn merge(&self, other: &Self) -> Self {
+        let mut data = (*self).clone();
+
+        data.education = merge(&self.education, &other.education, false);
+        data.experience = merge(&self.experience, &other.experience, false);
+        data.skills = merge(&self.skills, &other.skills, false);
+
+        if let Some(v) = &other.basic {
+            data.basic = Some(v.clone());
+        }
+
+        data
+    }
+}
+
+fn merge<T: Clone>(
+    left: &Option<Vec<T>>,
+    right: &Option<Vec<T>>,
+    overwrite: bool,
+) -> Option<Vec<T>> {
+    let mut new = Vec::new();
+
+    if let Some(v) = &left {
+        new = v.clone();
+    }
+
+    if let Some(v) = &right {
+        if overwrite {
+            new = v.clone();
+        } else {
+            new.append(&mut v.clone());
+        }
+    }
+
+    match new.len() {
+        x if x > 0 => Some(new),
+        _ => None,
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Basic {
     pub name: Option<String>,
     pub contact: Option<Contact>,
     pub websites: Option<Vec<Website>>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Contact {
     pub phone: Option<String>,
     pub email: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Website {
     pub text: String,
     pub url: String,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Education {
     pub school: String,
     pub gpa: String,
@@ -57,7 +108,7 @@ pub struct Education {
     pub achievements: Vec<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Experience {
     pub company: String,
     pub url: Option<String>,
@@ -65,20 +116,20 @@ pub struct Experience {
     pub projects: Vec<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Title {
     pub name: String,
     pub startdate: String,
     pub enddate: String,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Skills {
     pub category: String,
     pub skills: Vec<SkillsOrString>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum SkillsOrString {
     String(String),
