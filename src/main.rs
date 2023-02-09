@@ -1,10 +1,11 @@
 use std::include_str;
 use std::path::PathBuf;
+use std::fs::File;
+use std::io::prelude::*;
 
 use clap;
 use tera::{Context, Tera};
 
-#[macro_use]
 extern crate lazy_static;
 
 mod data;
@@ -34,21 +35,37 @@ fn cli() -> Result<clap::ArgMatches> {
     cmd = cmd.subcommand(
         clap::Command::new("generate")
             .about("generate")
-            .arg(clap::Arg::new("data_files").action(clap::ArgAction::Append)),
+            .arg(
+                clap::Arg::new("data_files")
+                    .help("yaml input data files")
+                    .action(clap::ArgAction::Append),
+            )
+            .arg(
+                clap::Arg::new("output_file")
+                    .long("output-file")
+                    .short('o')
+                    .action(clap::ArgAction::Set),
+            ),
     );
 
     Ok(cmd.get_matches())
 }
 
 fn generate_impl(matches: &clap::ArgMatches) -> Result<()> {
-    let values = match matches.try_get_many::<String>("data_files")? {
+    let data_files = match matches.try_get_many::<String>("data_files")? {
         Some(vs) => vs,
         None => return Err(Error::NoDataFiles),
     };
 
+    let default_output_filename = String::from("output.tex");
+    let output_filename = match matches.try_get_one::<String>("output_file")? {
+        Some(v) => v,
+        None => &default_output_filename,
+    };
+
     let mut d = Data::new();
-    for v in values {
-        let path = PathBuf::from(v);
+    for data_file_name in data_files {
+        let path = PathBuf::from(data_file_name);
         let tmp = Data::try_from(path.clone())?;
         d = d.merge(&tmp);
     }
@@ -56,13 +73,11 @@ fn generate_impl(matches: &clap::ArgMatches) -> Result<()> {
     let standard_tmpl = include_str!("templates/standard.tex");
     let mut tera = Tera::default();
     tera.add_raw_template("standard.tex", standard_tmpl)?;
-    for template in tera.get_template_names() {
-        println!("{:0}", template);
-    }
 
     let context = Context::from_serialize(d)?;
     let output = tera.render("standard.tex", &context)?;
-    println!("{:0}", output);
+    let mut output_file = File::create(output_filename)?;
+    output_file.write_all(output.as_bytes())?;
     Ok(())
 }
 
