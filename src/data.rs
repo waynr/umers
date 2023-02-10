@@ -2,11 +2,13 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
 
+use clap::parser::ValuesRef;
 use serde::{Deserialize, Serialize};
+use tera::Context;
 
 use crate::errors::{Error, Result};
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Data {
     pub basic: Option<Basic>,
     pub education: Option<Vec<Education>>,
@@ -20,11 +22,26 @@ impl TryFrom<PathBuf> for Data {
     fn try_from(pb: PathBuf) -> Result<Self> {
         // verify path exists
         let _ = pb.symlink_metadata()?;
-
         let mut file = File::open(pb)?;
         let mut contents = String::new();
         let _ = file.read_to_string(&mut contents)?;
         Ok(serde_yaml::from_str(&contents)?)
+    }
+}
+
+impl TryFrom<ValuesRef<'_, String>> for Data {
+    type Error = Error;
+
+    fn try_from(ss: ValuesRef<'_, String>) -> Result<Self> {
+        let mut d = Data::new();
+
+        for s in ss {
+            let p = PathBuf::from(s);
+            let tmp = Data::try_from(p.clone())?;
+            d.merge(&tmp)
+        }
+
+        Ok(d)
     }
 }
 
@@ -38,19 +55,19 @@ impl Data {
         }
     }
 
-    /// Merge aspects from the given Config into a copy of the current, return a new Config.
-    pub fn merge(&self, other: &Self) -> Self {
-        let mut data = (*self).clone();
-
-        data.education = merge(&self.education, &other.education, false);
-        data.experience = merge(&self.experience, &other.experience, false);
-        data.skills = merge(&self.skills, &other.skills, false);
+    /// Merge aspects from the given Config into the current, return a new Config.
+    pub fn merge(&mut self, other: &Self) {
+        self.education = merge(&self.education, &other.education, false);
+        self.experience = merge(&self.experience, &other.experience, false);
+        self.skills = merge(&self.skills, &other.skills, false);
 
         if let Some(v) = &other.basic {
-            data.basic = Some(v.clone());
+            self.basic = Some(v.clone());
         }
+    }
 
-        data
+    pub fn context(&self) -> Result<Context> {
+        Ok(Context::from_serialize(self)?)
     }
 }
 
