@@ -7,6 +7,15 @@ pub enum Error {
     #[error("missing data files")]
     NoDataFiles,
 
+    #[error("empty output path")]
+    EmptyOutputPath,
+
+    #[error("unsupported output file type '{0}'")]
+    UnsupportedOutputFileType(String),
+
+    #[error("invalid path {0}")]
+    InvalidPathError(std::path::PathBuf),
+
     /// Wrapper around `io::Error`.
     #[error("io error")]
     IO(#[from] std::io::Error),

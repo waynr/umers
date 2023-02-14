@@ -1,5 +1,4 @@
-use std::fs::File;
-use std::io::prelude::*;
+use std::path::PathBuf;
 
 use clap;
 
@@ -62,12 +61,11 @@ fn generate_impl(matches: &clap::ArgMatches) -> Result<()> {
         Some(v) => v,
         None => &default_output_filename,
     };
+    let output_path = PathBuf::from(output_filename);
 
     let context = Data::try_from(data_files)?.context()?;
     let mut generator = Generator::new()?;
-    let output = generator.generate(&context)?;
-    let mut output_file = File::create(output_filename)?;
-    output_file.write_all(output.as_bytes())?;
+    generator.generate(&context, &output_path)?;
 
     Ok(())
 }
